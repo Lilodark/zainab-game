@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zainab - Shooting Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        #gameTitle {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            z-index: 100;
+            letter-spacing: 3px;
+        }
+
+        #scoreBoard {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        #target {
+            position: absolute;
+            width: 120px;
+            height: 160px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        #target:hover {
+            transform: scale(1.1);
+        }
+
+        #target.hit {
+            animation: explode 0.3s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .name-tag {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 5px;
+            background: rgba(231, 76, 60, 0.9);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 2px solid #c0392b;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        .character {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hair {
+            width: 100px;
+            height: 40px;
+            background: #FFD700;
+            border-radius: 50% 50% 20% 20%;
+            position: absolute;
+            top: -10px;
+            border: 2px solid #FFA500;
+            z-index: 5;
+        }
+
+        .face {
+            width: 80px;
+            height: 80px;
+            background: #ffdbac;
+            border-radius: 50%;
+            position: relative;
+            margin-top: 20px;
+            border: 3px solid #ff6b6b;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .eyes {
+            display: flex;
+            gap: 20px;
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .eye {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #333;
+            position: relative;
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #333;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+        }
+
+        .mouth {
+            width: 30px;
+            height: 15px;
+            border: 3px solid #333;
+            border-top: none;
+            border-radius: 0 0 30px 30px;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .suit {
+            width: 100px;
+            height: 40px;
+            background: #2c3e50;
+            border-radius: 10px 10px 0 0;
+            margin-top: -10px;
+            position: relative;
+        }
+
+        .tie {
+            width: 20px;
+            height: 30px;
+            background: #e74c3c;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+        }
+
+        .bullet-hole {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #000 30%, #333 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: scale(0.5); }
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            color: white;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            background: #c0392b;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #timer {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff6b6b;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 100;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle 0.6s ease-out forwards;
+        }
+
+        @keyframes particle {
+            to {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+
+        #musicControls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 150;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 25px;
+        }
+
+        .music-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .music-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: scale(1.1);
+        }
+
+        .music-btn.muted {
+            background: rgba(231, 76, 60, 0.6);
+        }
+
+        .volume-slider {
+            width: 100px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .volume-slider input {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        #nowPlaying {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            color: white;
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 15px;
+            z-index: 150;
+        }
+
+        #musicInfo {
+            position: absolute;
+            bottom: 110px;
+            right: 20px;
+            color: #FFD700;
+            font-size: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: 15px;
+            z-index: 150;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 id="gameTitle">ZAINAB</h1>
+        <div id="scoreBoard">Score: <span id="score">0</span></div>
+        <div id="timer">Time: <span id="time">30</span>s</div>
+        
+        <div id="startScreen">
+            <h1 style="font-size: 60px; margin-bottom: 20px; color: #FFD700;">ZAINAB</h1>
+            <p style="font-size: 20px; margin-bottom: 30px;">Shoot the target as many times as you can!</p>
+            <p style="font-size: 16px; margin-bottom: 20px; color: #aaa;">🎵 Persian Music Enabled</p>
+            <button class="btn" onclick="startGame()">START GAME</button>
+        </div>
+
+        <div id="gameOverScreen" class="hidden">
+            <h1 style="font-size: 50px; margin-bottom: 20px;">GAME OVER</h1>
+            <p style="font-size: 30px; margin-bottom: 10px;">Final Score: <span id="finalScore">0</span></p>
+            <p style="font-size: 20px; margin-bottom: 30px; color: #aaa;">Great shooting!</p>
+            <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+
+        <div id="target" class="hidden">
+            <div class="name-tag">TRUMP</div>
+            <div class="character">
+                <div class="hair"></div>
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+                <div class="suit">
+                    <div class="tie"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="nowPlaying">🎵 Ready</div>
+        <div id="musicInfo">🇮🇷 Iranian Traditional</div>
+
+        <div id="musicControls">
+            <div class="volume-slider">
+                <input type="range" id="volumeSlider" min="0" max="100" value="60" title="Volume">
+            </div>
+            <button class="music-btn" id="muteBtn" onclick="toggleMute()" title="Toggle Music">🎵</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 30;
+        let gameInterval;
+        let moveInterval;
+        let isPlaying = false;
+        const target = document.getElementById('target');
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreElement = document.getElementById('score');
+        const timeElement = document.getElementById('time');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
+        
+        let audioContext;
+        let isMuted = false;
+        let masterVolume = 0.6;
+        let musicInterval;
+        let isMusicPlaying = false;
+        let currentNote = 0;
+
+        // Initialize Audio Context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Persian/Iranian style melody (Shur scale approximation)
+        // Frequencies for a Persian-style melody
+        const persianMelody = [
+            293.66, // D4
+            329.63, // E4
+            349.23, // F4
+            392.00, // G4
+            440.00, // A4
+            493.88, // B4
+            523.25, // C5
+            587.33, // D5
+            523.25, // C5
+            493.88, // B4
+            440.00, // A4
+            392.00, // G4
+            349.23, // F4
+            329.63, // E4
+            293.66, // D4
+            261.63, // C4
+            293.66, // D4
+            329.63, // E4
+            349.23, // F4
+            392.00, // G4
+            440.00, // A4
+            392.00, // G4
+            349.23, // F4
+            329.63  // E4
+        ];
+
+        const persianRhythm = [0.4, 0.2, 0.4, 0.2, 0.4, 0.4, 0.8, 0.4, 0.2, 0.4, 0.2, 0.4, 0.4, 0.8, 0.4, 0.4];
+
+        function playPersianNote(frequency, duration, time) {
+            if (isMuted || !audioContext) return;
+
+            // Create santur-like sound with multiple oscillators
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const osc3 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            // Connect oscillators
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Set frequencies for rich santur-like tone
+            osc1.frequency.setValueAtTime(frequency, time);
+            osc2.frequency.setValueAtTime(frequency * 2, time); // Octave
+            osc3.frequency.setValueAtTime(frequency * 1.5, time); // Fifth
+
+            // Triangle wave for santur-like sound
+            osc1.type = 'triangle';
+            osc2.type = 'sine';
+            osc3.type = 'sine';
+
+            // Low-pass filter for warmer sound
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, time);
+
+            // Envelope for plucked string effect
+            gainNode.gain.setValueAtTime(0, time);
+            gainNode.gain.linearRampToValueAtTime(0.3 * masterVolume, time + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, time + duration * 0.8);
+
+            // Start and stop
+            osc1.start(time);
+            osc2.start(time);
+            osc3.start(time);
+            
+            osc1.stop(time + duration);
+            osc2.stop(time + duration);
+            osc3.stop(time + duration);
+        }
+
+        function playBackgroundMusic() {
+            if (isMuted || !audioContext || isMusicPlaying) return;
+            
+            isMusicPlaying = true;
+            currentNote = 0;
+            
+            function playNextNote() {
+                if (isMuted || !isPlaying) {
+                    isMusicPlaying = false;
+                    return;
+                }
+
+                const freq = persianMelody[currentNote % persianMelody.length];
+                const duration = persianRhythm[currentNote % persianRhythm.length];
+                
+                playPersianNote(freq, duration, audioContext.currentTime);
+                
+                currentNote++;
+                
+                // Schedule next note
+                setTimeout(playNextNote, duration * 1000);
+            }
+            
+            playNextNote();
+        }
+
+        function stopBackgroundMusic() {
+            isMusicPlaying = false;
+            currentNote = 0;
+        }
+
+        // Sound Effects
+        function playShootSound() {
+            if (isMuted || !audioContext) return;
+            
+            const osc = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc.frequency.setValueAtTime(800, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3 * masterVolume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playHitSound() {
+            if (isMuted || !audioContext) return;
+            
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc1.frequency.setValueAtTime(1200, audioContext.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(2000, audioContext.currentTime + 0.1);
+            
+            osc2.frequency.setValueAtTime(800, audioContext.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.4 * masterVolume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            osc1.start(audioContext.currentTime);
+            osc2.start(audioContext.currentTime);
+            osc1.stop(audioContext.currentTime + 0.3);
+            osc2.stop(audioContext.currentTime + 0.3);
+        }
+
+        function playGameOverSound() {
+            if (isMuted || !audioContext) return;
+            
+            const notes = [400, 350, 300, 250];
+            notes.forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.2);
+                gainNode.gain.setValueAtTime(0.3 * masterVolume, audioContext.currentTime + i * 0.2);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.2 + 0.2);
+                
+                osc.start(audioContext.currentTime + i * 0.2);
+                osc.stop(audioContext.currentTime + i * 0.2 + 0.2);
+            });
+        }
+
+        // Controls
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            
+            if (isMuted) {
+                btn.textContent = '🔇';
+                btn.classList.add('muted');
+                stopBackgroundMusic();
+                document.getElementById('nowPlaying').textContent = '🔇 Muted';
+            } else {
+                btn.textContent = '🎵';
+                btn.classList.remove('muted');
+                if (isPlaying) {
+                    playBackgroundMusic();
+                    document.getElementById('nowPlaying').textContent = '🎵 Playing';
+                }
+            }
+        }
+
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            masterVolume = e.target.value / 100;
+        });
+
+        // Game Functions
+        function startGame() {
+            initAudio();
+            
+            score = 0;
+            timeLeft = 30;
+            isPlaying = true;
+            scoreElement.textContent = score;
+            timeElement.textContent = timeLeft;
+            
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            target.classList.remove('hidden');
+            
+            moveTarget();
+            playBackgroundMusic();
+            document.getElementById('nowPlaying').textContent = '🎵 Playing';
+            
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timeElement.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            moveInterval = setInterval(moveTarget, 1500);
+        }
+
+        function moveTarget() {
+            if (!isPlaying) return;
+            
+            const maxX = window.innerWidth - 140;
+            const maxY = window.innerHeight - 200;
+            const randomX = Math.random() * maxX + 20;
+            const randomY = Math.random() * maxY + 150;
+            
+            target.style.left = randomX + 'px';
+            target.style.top = randomY + 'px';
+            target.classList.remove('hit');
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'px');
+                particle.style.setProperty('--ty', (Math.random() - 0.5) * 100 + 'px');
+                gameContainer.appendChild(particle);
+                setTimeout(() => particle.remove(), 600);
+            }
+        }
+
+        target.addEventListener('click', (e) => {
+            if (!isPlaying) return;
+            
+            e.stopPropagation();
+            score += 10;
+            scoreElement.textContent = score;
+            
+            target.classList.add('hit');
+            playHitSound();
+            createParticles(e.clientX, e.clientY);
+            
+            setTimeout(() => {
+                if (isPlaying) moveTarget();
+            }, 200);
+        });
+
+        gameContainer.addEventListener('click', (e) => {
+            if (!isPlaying) return;
+            
+            playShootSound();
+            
+            if (e.target !== target && !target.contains(e.target)) {
+                const hole = document.createElement('div');
+                hole.className = 'bullet-hole';
+                hole.style.left = (e.clientX - 10) + 'px';
+                hole.style.top = (e.clientY - 10) + 'px';
+                gameContainer.appendChild(hole);
+                setTimeout(() => hole.remove(), 1000);
+            }
+        });
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearInterval(moveInterval);
+            
+            stopBackgroundMusic();
+            
+            target.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            finalScoreElement.textContent = score;
+            
+            playGameOverSound();
+            document.getElementById('nowPlaying').textContent = '⏹️ Stopped';
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html>
